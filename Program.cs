@@ -161,7 +161,7 @@ namespace Identity
                 name: "default",
                 pattern: "{controller=Admin}/{action=Delete}/{id?}");
 
-
+            //some thing
             app.Run();
         }
     }
