@@ -1,0 +1,22 @@
+﻿@model string
+
+@{
+    ViewData["Title"] = "Authentication";
+}
+
+
+<a asp-controller="Admin" asp-action="Index">Users</a>
+<a asp-controller="Claims" asp-action="Index">Claims</a>
+<h1 class="bg-info text-white">Index</h1>
+@Model
+
+@* base ở đây là class RazorPageBase của namespace Microsoft.AspNetCore.Mvc.Razor *@
+@* cứ hiểu tạo 1 view là tạo 1 object của class RazorPageBase *@
+@* do đó ta có thể sử dụng các thuộc tính và phương thức trong class RazorPageBase *@
+@* và trong RazorPageBase có thuộc tính User *@
+@* ta sử dụng thuộc tính User để check xem người dùng đã đăng nhập chưa *@
+
+@if (base.User?.Identity?.IsAuthenticated ?? false)
+{
+    <a asp-controller="Account" asp-action="Logout" class="btn btn-danger">Logout</a>
+}
