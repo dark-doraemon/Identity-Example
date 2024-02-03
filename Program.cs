@@ -26,11 +26,18 @@ namespace Identity
 
             //AddEntityFrameworkStores method dùng để chỉ định rằng identity sẽ sử dụng EF core và db context class(AppIdentityDbContext)
 
-            //AddDefautTokenProviders method dùng để add default token providers
+            //AddDefautTokenProviders method dùng để bật các hàm token generation trong app 
             //được sử dụng để tạo ra tokens dùng để reset password, change email,....
             //và dùng để tạo ra mã xác thực 2 yếu tố
             //AddIdentity dùng để đăng kí các dịch dịch vụ như UserManager,SignInManager,RoleManager....(nói chung những class liên quan tới identity đều nằm trong AddIdentity)
             builder.Services.AddIdentity<AppUser, IdentityRole>().AddEntityFrameworkStores<AppIdentityDbContext>().AddDefaultTokenProviders();
+
+
+            //configure token 
+            builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+            {
+                options.TokenLifespan = TimeSpan.FromHours(1);  
+            });
 
             builder.Services.Configure<IdentityOptions>(options =>
             {
@@ -119,6 +126,7 @@ namespace Identity
             //đăng kí dịch vụ sử dụng log in bằng google
             builder.Services.AddAuthentication().AddGoogle(options =>
             {
+                //những đoạng mã này do api của google cũng cấp
                 options.ClientId = "116407193869-c9h65mgs1g0lscdpju7caciddh5aaks8.apps.googleusercontent.com";
                 options.ClientSecret = "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";
                 options.SignInScheme = IdentityConstants.ExternalScheme;

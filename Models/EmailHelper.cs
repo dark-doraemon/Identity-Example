@@ -70,5 +70,34 @@ namespace Identity.Models
             }
             return false;
         }
+        
+        public bool SendEmailPasswordReset(string userEmail, string resetLink)
+        {
+            //MailMessage dùng để chứa nội dung mail
+            MailMessage mailMessage = new MailMessage();
+            mailMessage.From = new MailAddress("thedotnetchannelsender22@gmail.com");
+            mailMessage.To.Add(new MailAddress(userEmail));
+ 
+            mailMessage.Subject = "Password Reset";
+            mailMessage.IsBodyHtml = true;
+            mailMessage.Body = resetLink;
+ 
+            SmtpClient client = new SmtpClient();
+            client.Credentials = new System.Net.NetworkCredential("thedotnetchannelsender22@gmail.com", "lgioehkvchemfkrw");
+            client.Host = "smtp.gmail.com";
+            client.Port = 587;
+            client.EnableSsl = true;
+ 
+            try
+            {
+                client.Send(mailMessage);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // log exception
+            }
+            return false;
+        }
     }
 }

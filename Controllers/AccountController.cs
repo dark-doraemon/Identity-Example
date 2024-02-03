@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
 namespace Identity.Controllers
@@ -212,6 +213,100 @@ namespace Identity.Controllers
                 }
                 return AccessDenied();
             }
+        }
+
+        //hàm ForgotPassword dùng để hiển thị giao diện quên mật khẩu (nhập email cần reset password)
+        [AllowAnonymous]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+        
+    
+        //hàm ForgotPassword (post) dùng đề gửi link reset khi người dùng nhập email
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword([Required]string email)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View();
+            }
+            
+            //tìm kiếm người dùng theo email 
+            var user = await userManager.FindByEmailAsync(email);
+
+            if (user == null)//nếu không tìm thấy user
+            {
+                return RedirectToAction(nameof(ForgotPasswordConfirmation));
+
+            }
+            
+            //tạo password reset token dự trên user bằng hàm GeneratePasswordResetTokenAsync
+            var token = await userManager.GeneratePasswordResetTokenAsync(user);
+
+            //tạo ra link reset password 
+            var link = Url.Action("ResetPassword", "Account", new { token, email = user.Email }, Request.Scheme);
+ 
+            //gửi link reset password tới email của user
+            EmailHelper emailHelper = new EmailHelper();
+            bool emailResponse = emailHelper.SendEmailPasswordReset(user.Email, link);
+ 
+            if (emailResponse)
+                return RedirectToAction("ForgotPasswordConfirmation");
+            else
+            {
+                // log email failed 
+            }
+            return View(email);
+        }
+
+        //hàm này dùng để hiện thì thông báo khi người dùng rằng chương trình đã gửi link reset password vào email
+        [AllowAnonymous]
+        public IActionResult ForgotPasswordConfirmation()
+        {
+            return View();
+        }
+
+
+
+        //Hàm ResetPassword (nhập mật khẩu với và xác nhận lại mật khẩu)
+        //hàm này sẽ được gọi khi người dùng click vào link reset
+        [AllowAnonymous]
+        public IActionResult ResetPassword(string token, string email)
+        {
+            //lấy token và emaail gán vào view rồi từ view gủi token và email vào hàm post 
+            var model = new ResetPassword { Token = token, Email = email };
+            return View(model);
+        }
+ 
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword(ResetPassword resetPassword)
+        {
+            if (!ModelState.IsValid)
+                return View(resetPassword);
+ 
+            var user = await userManager.FindByEmailAsync(resetPassword.Email);
+            if (user == null)
+                RedirectToAction("ResetPasswordConfirmation");
+            
+            //reset password nhưng phải kiểm tra token có đúng không
+            var resetPassResult = await userManager.ResetPasswordAsync(user, resetPassword.Token, resetPassword.Password);
+            if (!resetPassResult.Succeeded)
+            {
+                foreach (var error in resetPassResult.Errors)
+                    ModelState.AddModelError(error.Code, error.Description);
+                return View();
+            }
+            
+            
+            return View("ResetPasswordConfirmation");
+        }
+ 
+        public IActionResult ResetPasswordConfirmation()
+        {
+            return View();
         }
     }
 }
