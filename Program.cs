@@ -57,6 +57,18 @@ namespace Identity
                 //Xác nhận email
                 options.SignIn.RequireConfirmedEmail = true;
 
+
+                //khóa người dùng khi nhập xai password
+                options.Lockout.AllowedForNewUsers = true;//bật khóa người dùng
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(1);//thời gian khóa tài khoản
+                options.Lockout.MaxFailedAccessAttempts = 5;//số lần được phép nhập mật khẩu
+
+                //AspNetUsers table có 3 cột cho việc khóa tài khoản
+                //LockoutEnabled : chỉ định rằng user có bị khóa hay không
+                //AccessFailedCount : giá trị của cột này sẽ tăng cho mỗi lần nhập sai password và sẽ reset khi tài khoản bị khóa
+                //LockoutEnd : datetime value để đại diện cho khoản thời gian tài khoản bị khóa
+                
+
             });
 
             //đăng kí dịch vụ để Check password

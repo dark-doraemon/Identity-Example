@@ -55,25 +55,34 @@ namespace Identity.Controllers
                     //sử dụng hàm PasswordSignInAsync để đăng nhập
                     //isPersistent : có nên duy trì cookie khi đóng browser không và ta sẽ dùng nó làm tính năng remember me(true : vẫn lưu cookie khi đóng trình duyêt)
                     //lockoutOnFailure : có nên khóa tài khoản người dùng khi không đăng nhập thành công không
-                    Microsoft.AspNetCore.Identity.SignInResult result = await signInManager.PasswordSignInAsync(appUser, login.Password, login.Remember, false);
+                    Microsoft.AspNetCore.Identity.SignInResult result = await signInManager.PasswordSignInAsync(appUser,
+                        login.Password, login.Remember, true);
 
                     //nếu là tài khoản xác thực 2FA thì cho dù đúng mật khẩu cũng không succeded
                     if (result.Succeeded)
                         return Redirect(login.ReturnUrl ?? "/");
-                    
-                    //kiểm tra người dùng đã xác thực tài khoản chưa
-                    if(await userManager.IsEmailConfirmedAsync(appUser) == false)
-                    {
-                        ModelState.AddModelError(nameof(login.Email), "Email is unconfirmed, please confirm it first");
-                    }
 
-                    //kiểm tra có xác thực 2FA không
-                    else if (result.RequiresTwoFactor)
+                    //kiểm tra tài khoản có bị khóa không 
+                    if (result.IsLockedOut)
                     {
-                        //chuyển tới action LoginTwoStep
-                        return RedirectToAction("LoginTwoStep", new { appUser.Email, login.ReturnUrl  });
+                        ModelState.AddModelError("", "Your account is locked out. Kindly wait for 1 minutes and try again");
                     }
+                    else
+                    {
+                        //kiểm tra người dùng đã xác thực tài khoản chưa
+                        if (await userManager.IsEmailConfirmedAsync(appUser) == false)
+                        {
+                            ModelState.AddModelError(nameof(login.Email), "Email is unconfirmed, please confirm it first");
+                        }
 
+                        //kiểm tra có xác thực 2FA không(chỉ trả về true nếu đúng mật khẩu và có bật 2FA)
+                        else if (result.RequiresTwoFactor)
+                        {
+                            //chuyển tới action LoginTwoStep
+                            return RedirectToAction("LoginTwoStep", new { appUser.Email, login.ReturnUrl });
+                        }
+                      
+                    }
                 }
                 ModelState.AddModelError(nameof(login.Email), "Login Failed: Invalid Email or password");
             }
@@ -221,18 +230,18 @@ namespace Identity.Controllers
         {
             return View();
         }
-        
-    
+
+
         //hàm ForgotPassword (post) dùng đề gửi link reset khi người dùng nhập email
         [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> ForgotPassword([Required]string email)
+        public async Task<IActionResult> ForgotPassword([Required] string email)
         {
             if (!ModelState.IsValid)
             {
                 return View();
             }
-            
+
             //tìm kiếm người dùng theo email 
             var user = await userManager.FindByEmailAsync(email);
 
@@ -241,17 +250,17 @@ namespace Identity.Controllers
                 return RedirectToAction(nameof(ForgotPasswordConfirmation));
 
             }
-            
+
             //tạo password reset token dự trên user bằng hàm GeneratePasswordResetTokenAsync
             var token = await userManager.GeneratePasswordResetTokenAsync(user);
 
             //tạo ra link reset password 
             var link = Url.Action("ResetPassword", "Account", new { token, email = user.Email }, Request.Scheme);
- 
+
             //gửi link reset password tới email của user
             EmailHelper emailHelper = new EmailHelper();
             bool emailResponse = emailHelper.SendEmailPasswordReset(user.Email, link);
- 
+
             if (emailResponse)
                 return RedirectToAction("ForgotPasswordConfirmation");
             else
@@ -279,18 +288,18 @@ namespace Identity.Controllers
             var model = new ResetPassword { Token = token, Email = email };
             return View(model);
         }
- 
+
         [HttpPost]
         [AllowAnonymous]
         public async Task<IActionResult> ResetPassword(ResetPassword resetPassword)
         {
             if (!ModelState.IsValid)
                 return View(resetPassword);
- 
+
             var user = await userManager.FindByEmailAsync(resetPassword.Email);
             if (user == null)
                 RedirectToAction("ResetPasswordConfirmation");
-            
+
             //reset password nhưng phải kiểm tra token có đúng không
             var resetPassResult = await userManager.ResetPasswordAsync(user, resetPassword.Token, resetPassword.Password);
             if (!resetPassResult.Succeeded)
@@ -299,11 +308,11 @@ namespace Identity.Controllers
                     ModelState.AddModelError(error.Code, error.Description);
                 return View();
             }
-            
-            
+
+
             return View("ResetPasswordConfirmation");
         }
- 
+
         public IActionResult ResetPasswordConfirmation()
         {
             return View();

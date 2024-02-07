@@ -141,3 +141,4 @@ D:\Code\LinhTinh\Identity\obj\Debug\net8.0\Identity.pdb
 D:\Code\LinhTinh\Identity\obj\Debug\net8.0\Identity.genruntimeconfig.cache
 D:\Code\LinhTinh\Identity\obj\Debug\net8.0\ref\Identity.dll
 D:\Code\LinhTinh\Identity\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.Google.dll
+D:\Code\LinhTinh\Identity\obj\Debug\net8.0\Identity.sourcelink.json
